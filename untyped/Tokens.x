@@ -10,7 +10,7 @@ tokens :-
         $white+ ;
         lambda  { \s -> TokenLambda }
         $alpha+ { \s -> TokenVariable s }
-        .       { \s -> TokenDot }
+        \.      { \s -> TokenDot }
         \(      { \s -> TokenOB }
         \)      { \s -> TokenCB }
 
