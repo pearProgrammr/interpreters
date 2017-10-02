@@ -12,13 +12,13 @@ tokens :-
         lambda  { \s -> TokenLambda }
         $alpha+ { \s -> TokenVariable s }
         $digit+ { \s -> TokenInt (read s) }
-        \.      { \s -> TokenDot }
+        '->'    { \s -> TokenRArrow }
         \(      { \s -> TokenOB }
         \)      { \s -> TokenCB }
         \+      { \s -> TokenAdd }
         \-      { \s -> TokenSub }
---        \*      { \s -> TokenMul }
---        \/      { \s -> TokenDiv }
+        \*      { \s -> TokenMul }
+        \/      { \s -> TokenDiv }
 
 
 {
@@ -26,13 +26,13 @@ tokens :-
 data Token = TokenLambda
            | TokenVariable String
            | TokenInt Int
-           | TokenDot
+           | TokenRArrow
            | TokenOB
            | TokenCB
            | TokenAdd
            | TokenSub
---           | TokenMul
---           | TokenDiv
+           | TokenMul
+           | TokenDiv
            deriving (Eq, Show)
 
 scanTokens = alexScanTokens

@@ -34,12 +34,13 @@ eval (App body param) env =
          _                -> error ("Function required at the left-side of application")
 
 eval (Const numval) env = Num numval
-eval (Add e1 e2) env =
-    case (eval e1 env, eval e2 env) of
-         (Num val1, Num val2) -> Num (val1 + val2)
-         _                    -> error ("bad addition")
-eval (Sub e1 e2) env =
-    case (eval e1 env, eval e2 env) of
-         (Num val1, Num val2) -> Num (val1 - val2)
-         _                    -> error ("bad subtraction")
+eval (Add e1 e2) env = evalMathOp e1 e2 env (+)
+eval (Sub e1 e2) env = evalMathOp e1 e2 env (-)
+eval (Mul e1 e2) env = evalMathOp e1 e2 env (*)
+eval (Div e1 e2) env = evalMathOp e1 e2 env quot
 
+evalMathOp :: Term -> Term -> Env -> (Int -> Int -> Int) -> Val
+evalMathOp e1 e2 env op =
+    case (eval e1 env, eval e2 env) of
+         (Num val1, Num val2) -> Num (val1 `op` val2)
+         _                    -> error ("bad math")
