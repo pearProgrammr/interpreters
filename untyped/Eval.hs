@@ -3,11 +3,11 @@ module Eval where
 import Grammar
 import Tokens
 
-evalUntyped input = eval input
+evalUntyped input = printTerm input
 
-eval :: Term -> String
-eval (Variable name)    = "Var " ++ name ++ " "
-eval (Lambda name term) = "Lambda " ++ name ++ " " ++ (eval term) ++ " "
-eval (App t1 t2)        = "App " ++ (eval t1) ++ (eval t2) ++ " "
-eval (Brack term)       =  "( " ++ (eval term) ++ " ) "
+printTerm :: Term -> String
+printTerm (Variable name)    = "Var " ++ name ++ " "
+printTerm (Lambda name term) = "Lambda " ++ name ++ " " ++ (printTerm term) ++ " "
+printTerm (App t1 t2)        = "App " ++ (printTerm t1) ++ (printTerm t2) ++ " "
+printTerm (Brack term)       =  "( " ++ (printTerm term) ++ " ) "
 
