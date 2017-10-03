@@ -13,12 +13,12 @@ evalLoop = do
                  putStrLn "Leaving Untyped"
                  return ()
              else do
-                 flushBuff input
+                 --flushBuff input
                  let tokens = scanTokens input
-                 putStr "tokens"
-                 print tokens
+                 --putStr "tokens"
+                 --print tokens
                  let ast = parseUntyped tokens
-                 print ast
+                 --print ast
                  let val = evalUntyped ast
                  print val
                  evalLoop

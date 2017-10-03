@@ -18,22 +18,27 @@ import Tokens
       '-'             { TokenSub }
       '*'             { TokenMul }
       '/'             { TokenDiv }
+      let             { TokenLet }
+      '='             { TokenAssign }
+      in              { TokenIn }
 
+%right '='
 
 %left '+' '-'
 %left '*' '/'
 
 %%
 
-Term  : var                     { Variable $1 }
-      | lambda var '->' Term    { Lambda $2 $4 }
-      | Term Term               { App $1 $2 }
-      | '(' Term ')'            { $2 }
-      | constInt                { Const $1 }
-      | Term '+' Term           { Add $1 $3 }
-      | Term '-' Term           { Sub $1 $3 }
-      | Term '*' Term           { Mul $1 $3 }
-      | Term '/' Term           { Div $1 $3 }
+Term  : var                      { Variable $1 }
+      | lambda var '->' Term     { Lambda $2 $4 }
+      | let var '=' Term in Term { Let $2 $4 $6 }
+      | Term Term                { App $1 $2 }
+      | '(' Term ')'             { $2 }
+      | constInt                 { Const $1 }
+      | Term '+' Term            { Add $1 $3 }
+      | Term '-' Term            { Sub $1 $3 }
+      | Term '*' Term            { Mul $1 $3 }
+      | Term '/' Term            { Div $1 $3 }
 
 
 {
@@ -50,5 +55,6 @@ data Term = Variable Name
           | Sub Term Term
           | Mul Term Term
           | Div Term Term
+          | Let Name Term Term
           deriving Show
 }

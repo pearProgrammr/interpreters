@@ -10,9 +10,12 @@ $digit = [0-9]
 tokens :-
         $white+ ;
         lambda  { \s -> TokenLambda }
+        '->'    { \s -> TokenRArrow }
+        let     { \s -> TokenLet }
+        =       { \s -> TokenAssign }
+        in      { \s -> TokenIn }
         $alpha+ { \s -> TokenVariable s }
         $digit+ { \s -> TokenInt (read s) }
-        '->'    { \s -> TokenRArrow }
         \(      { \s -> TokenOB }
         \)      { \s -> TokenCB }
         \+      { \s -> TokenAdd }
@@ -33,6 +36,9 @@ data Token = TokenLambda
            | TokenSub
            | TokenMul
            | TokenDiv
+           | TokenLet
+           | TokenAssign
+           | TokenIn
            deriving (Eq, Show)
 
 scanTokens = alexScanTokens

@@ -14,6 +14,7 @@ printTerm (Brack term)       =  "( " ++ (printTerm term) ++ " ) "
 printTerm (Const val)        = "Constant Value " ++ (show val)
 printTerm (Add e1 e2)        = (printTerm e1) ++ " + " ++ (printTerm e2) ++ " "
 printTerm (Sub e1 e2)        = (printTerm e1) ++ " - " ++ (printTerm e2) ++ " "
+printTerm (Let n e b)        = "Let " ++ n ++ " = " ++ printTerm e ++ " in " ++ printTerm b
 
 data Val = Num Int
          | Func Name Term Env
@@ -27,6 +28,8 @@ eval (Variable n) env = case lookup n env of
                             Nothing  -> error ("Unbound variable " ++ n)
 
 eval (Lambda name body) env = Func name body env
+
+eval (Let n expr body) env = eval body ((n, eval expr env):env)
 
 eval (App body param) env =
     case eval body env of
