@@ -3,7 +3,7 @@ module Eval where
 import Grammar
 import Tokens
 
-evalUntyped input = show $ eval input []
+evalSimplyTyped input = show $ eval input []
 
 data Val = Num Int
          | Boolean Bool

@@ -3,7 +3,7 @@ module Grammar where
 import Tokens
 }
 
-%name parseUntyped
+%name parseSimplyTyped
 %tokentype { Token }
 %error { parseError }
 
@@ -79,8 +79,8 @@ data Term = Variable Name
           | ConstFalse
           | Equals Term Term
           | If Term Term Term
-          deriving Show
+          deriving (Show, Eq)
 
 data Op = Add | Sub | Mul | Div
-        deriving Show
+        deriving (Show, Eq)
 }
