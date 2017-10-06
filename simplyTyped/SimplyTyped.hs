@@ -5,8 +5,13 @@ import Grammar
 import Tokens
 import TypeCheck
 
+mainEnv :: Env
+mainEnv = []
+tyEnv :: TyEnv
+tyEnv = []
 
-evalLoop = do
+
+evalLoop env = do
          flushBuff "> "
          input <- getLine
          if input == ":q"
@@ -19,12 +24,12 @@ evalLoop = do
                  --putStr "tokens"
                  --print tokens
                  let ast = parseSimplyTyped tokens
-                 let exprType = checkType ast []
+                 let exprType = checkType ast tyEnv
                  print exprType
                  --print ast
-                 let val = evalSimplyTyped ast
-                 print val
-                 evalLoop
+                 let val = evalSimplyTyped ast env
+                 print $ show val
+                 evalLoop (snd val)
 
 flushBuff input = do
                 putStr input 
@@ -33,5 +38,5 @@ flushBuff input = do
 eval = evalSimplyTyped
 main :: IO()
 main = do
-     evalLoop
+     evalLoop mainEnv
 

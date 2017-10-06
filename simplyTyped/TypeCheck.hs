@@ -15,6 +15,12 @@ checkType (Variable n) tyEnv =
         Just val -> val
         Nothing  -> error ("unbound variable " ++ n)
 
+checkType (Assign n expr) tyEnv =
+    case lookup n tyEnv of
+        Just val -> error (n ++ " already exists")
+        Nothing  -> checkType expr tyEnv
+
+
 checkType (Lambda n b) tyEnv = TyFunc n b tyEnv
 
 checkType (App e1 e2) tyEnv =

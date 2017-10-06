@@ -46,6 +46,7 @@ import Tokens
 %%
 
 Term  : var                         { Variable $1 }
+      | var '=' Term                { Assign $1 $3 }
       | '\\' var '->' Term          { Lambda $2 $4 }
       | let var '=' Term in Term    { Let $2 $4 $6 }
       | Term Term                   { App $1 $2 }
@@ -79,6 +80,7 @@ data Term = Variable Name
           | ConstFalse
           | Equals Term Term
           | If Term Term Term
+          | Assign String Term
           deriving (Show, Eq)
 
 data Op = Add | Sub | Mul | Div
