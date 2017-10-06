@@ -43,13 +43,13 @@ checkType ConstFalse tyEnv = TyBool
 
 checkType (Equals e1 e2) tyEnv =
     case (checkType e1 tyEnv, checkType e2 tyEnv) of
-        (tv1, tv2) -> if tv1 == tv2 
-                         then tv1
-                         else error (show tv1 ++ " and " ++ show tv2 ++ " are not equivalent")
+         (tv1, tv2) -> if tv1 == tv2 
+                          then tv1
+                          else error (show tv1 ++ " and " ++ show tv2 ++ " are not equivalent")
 
 checkType (If pred thenExpr elseExpr) tyEnv =
     case checkType pred tyEnv of
-        TyBool -> case (checkType thenExpr tyEnv, checkType elseExpr tyEnv) of
-                      (tv1, tv2) -> if tv1 == tv2
-                                        then tv1
-                                        else error ("then and else clause have differing types")
+         TyBool -> case (checkType thenExpr tyEnv, checkType elseExpr tyEnv) of
+                        (tv1, tv2) -> if tv1 == tv2
+                                         then tv1
+                                         else error ("then and else clause have differing types")

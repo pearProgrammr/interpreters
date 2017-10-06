@@ -13,14 +13,16 @@ data Val = Num Int
 type Env = [(String, Val)]
 
 eval :: Term -> Env -> (Val, Env)
-eval (Variable n) env = case lookup n env of
-                            Just val -> (val, env)
-                            Nothing  -> error ("Unbound variable " ++ n)
+eval (Variable n) env =
+    case lookup n env of
+         Just val -> (val, env)
+         Nothing  -> error ("Unbound variable " ++ n)
 
-eval (Assign n expr) env = case lookup n env of
-                               Just val -> error (n ++" already exists")
-                               _        -> case eval expr env of
-                                               (v, e) -> (v, (n, v):env)
+eval (Assign n expr) env =
+    case lookup n env of
+         Just val -> error (n ++" already exists")
+         _        -> case eval expr env of
+                          (v, e) -> (v, (n, v):env)
 
 eval (Lambda n body) env = (Func n body env, env)
 
