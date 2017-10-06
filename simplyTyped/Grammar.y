@@ -9,7 +9,7 @@ import Tokens
 
 %token 
       -- lambda calculus symbols --
-      lambda          { TokenLambda }
+      '\\'            { TokenLambda }
       '->'            { TokenRArrow }
       var             { TokenVariable $$ }
       '('             { TokenOB }
@@ -46,7 +46,7 @@ import Tokens
 %%
 
 Term  : var                         { Variable $1 }
-      | lambda var '->' Term        { Lambda $2 $4 }
+      | '\\' var '->' Term          { Lambda $2 $4 }
       | let var '=' Term in Term    { Let $2 $4 $6 }
       | Term Term                   { App $1 $2 }
       | '(' Term ')'                { $2 }

@@ -27,8 +27,8 @@ tokens :-
 
         -- general symbols --
         $white+ ;
-        lambda  { \s -> TokenLambda }
-        '->'    { \s -> TokenRArrow }
+        \\      { \s -> TokenLambda }
+        \-\>    { \s -> TokenRArrow }
         let     { \s -> TokenLet }
         =       { \s -> TokenAssign }
         in      { \s -> TokenIn }
