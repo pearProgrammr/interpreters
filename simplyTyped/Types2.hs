@@ -22,6 +22,7 @@ class Types t where
 instance Types Type where
   applySubst s (TVar v) = case lookup v s of
                           Just t -> t
+                          Nothing -> TVar v
   applySubst s (TFun l r) = TFun (applySubst s l) (applySubst s r)
   applySubst s t          = t
 
@@ -38,6 +39,7 @@ s1 @@ s2 = [(u, applySubst s1 t) | (u, t) <- s2] ++ s1
 --unification algorithm
 unify TInt TInt = []
 unify TBool TBool = []
+unify (TVar v) (TVar w) = [(v, TVar w) | v /= w]
 unify (TVar v) t = varBind v t
 unify t (TVar v) = varBind v t
 unify (TFun t1 t2) (TFun t1' t2')
@@ -72,6 +74,8 @@ envLookup n env = case lookup n env of
                        Just t -> t
                        Nothing -> error ("unbound variable " ++ n)
 
+newVar n = (TVar (TyVar "none" n), n+1)
+
 infer :: Env -> Term -> Int -> (Subst, Type, Int)
 infer env (Var v) n
   = let t = envLookup v env
@@ -83,17 +87,17 @@ infer env (Boolean b) n
   = ([], TBool, n)
 
 infer env (Lam v e) n
-  = let n1 = n + 1
-        (s, t, n2) = infer ((v, TVar (TyVar v n1)):env) e n1
-    in (s, applySubst s t, n2)
+  = let (u, n1) = newVar n
+        (s, t, n2) = infer ((v, u):env) e n1
+    in (s, TFun (applySubst s u) t, n2)
 
 
 infer env (Ap l r) n
   = let (s1, t1, n1) = infer env l n
         (s2, t2, n2) = infer (applySubstToEnv s1 env) r n1
-        n3 = n2 + 1
-        s3 = unify (applySubst s2 t1) (TVar $ TyVar "none" n3) -- is this second argument correct???
-    in (s1 @@ s2 @@ s3, t2, n2)
+        (v, n3) = newVar n2
+        s3 = unify (applySubst s2 t1) (TFun t2 v)
+    in (s3 @@ s2 @@ s1, applySubst s3 v, n3)
 
 
 applySubstToEnv :: Subst -> Env -> Env
