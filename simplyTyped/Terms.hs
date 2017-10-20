@@ -5,7 +5,6 @@ data Term = Variable Name
           | Const Int 
           | Lambda Name Term
           | App Term Term
-          | Brack Term
           | MathOp Op Term Term
           | Let Name Term Term
           | ConstTrue

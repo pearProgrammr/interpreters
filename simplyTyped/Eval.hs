@@ -70,7 +70,6 @@ printTerm :: Term -> String
 printTerm (Variable n)       = "Var " ++ n ++ " "
 printTerm (Lambda n t)       = "Lambda " ++ n ++ " " ++ printTerm t ++ " "
 printTerm (App t1 t2)        = "App " ++ printTerm t1 ++ printTerm t2 ++ " "
-printTerm (Brack t)          =  "( " ++ printTerm t ++ " ) "
 printTerm (Const val)        = "Constant Value " ++ show val
 printTerm (MathOp Add e1 e2) = printTerm e1 ++ " + " ++ printTerm e2 ++ " "
 printTerm (MathOp Sub e1 e2) = printTerm e1 ++ " - " ++ printTerm e2 ++ " "
