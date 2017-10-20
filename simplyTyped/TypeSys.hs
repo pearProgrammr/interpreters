@@ -1,4 +1,4 @@
-module Types2 where
+module TypeSys where
 
 type Id = String
 

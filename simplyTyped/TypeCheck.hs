@@ -2,6 +2,7 @@ module TypeCheck where
 
 import Tokens
 import Grammar
+import Terms
 
 data TypeVal = TyNum | TyBool | TyFunc Name Term TyEnv
              deriving (Show, Eq)

@@ -6,7 +6,7 @@ Tokens.hs : Tokens.x
 Grammar.hs : Grammar.y
 	happy Grammar.y
 
-SimplyTyped : Tokens.hs Grammar.hs TypeCheck.hs Eval.hs SimplyTyped.hs Types.hs
+SimplyTyped : Tokens.hs Terms.hs Grammar.hs TypeCheck.hs Eval.hs SimplyTyped.hs
 	ghc --make SimplyTyped
 
 install: all

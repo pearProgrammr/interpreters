@@ -1,6 +1,7 @@
 {
 module Grammar where
 import Tokens
+import Terms
 }
 
 %name parseSimplyTyped
@@ -65,24 +66,4 @@ Term  : var                         { Variable $1 }
 {
 parseError :: [Token] -> a
 parseError = error "Parse error"
-
-
-
-type Name = String
-data Term = Variable Name
-          | Const Int 
-          | Lambda Name Term
-          | App Term Term
-          | Brack Term
-          | MathOp Op Term Term
-          | Let Name Term Term
-          | ConstTrue
-          | ConstFalse
-          | Equals Term Term
-          | If Term Term Term
-          | Assign String Term
-          deriving (Show, Eq)
-
-data Op = Add | Sub | Mul | Div
-        deriving (Show, Eq)
 }

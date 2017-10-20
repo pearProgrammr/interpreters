@@ -2,6 +2,7 @@ module Eval where
 
 import Grammar
 import Tokens
+import Terms
 
 evalSimplyTyped = eval
 
