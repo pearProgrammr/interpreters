@@ -3,7 +3,6 @@ module TypeSys where
 import Data.Char
 import Terms
 
-type Id = String
 
 data Type = TVar TyVar
           | TInt
@@ -11,7 +10,7 @@ data Type = TVar TyVar
           | TFun Type Type
           deriving (Eq, Show)
 
-data TyVar = TyVar Id Int
+data TyVar = TyVar Int
            deriving (Eq, Show)
 
 -- pretty print
@@ -19,7 +18,7 @@ prettyType :: Type -> String
 prettyType TInt = "Int"
 prettyType TBool = "Bool"
 prettyType (TFun x y) = prettyType x ++ " -> " ++ prettyType y
-prettyType (TVar (TyVar id num)) = varNumToType num
+prettyType (TVar (TyVar num)) = varNumToType num
 
 varNumToType :: Int -> String
 varNumToType n
@@ -57,10 +56,10 @@ s1 @@ s2 = [(u, applySubst s1 t) | (u, t) <- s2] ++ s1
 unify TInt TInt = []
 unify TBool TBool = []
 unify (TVar v) (TVar w) = [reduceVarNum (TVar v) (TVar w) | v /= w]
-                          where reduceVarNum (TVar (TyVar _ x)) (TVar (TyVar _ y))
+                          where reduceVarNum (TVar (TyVar x)) (TVar (TyVar y))
                                      = if x < y
-                                          then ((TyVar "none" x), (TVar (TyVar "none" y)))
-                                          else ((TyVar "none" y), (TVar (TyVar "none" x)))
+                                          then ((TyVar x), (TVar (TyVar y)))
+                                          else ((TyVar y), (TVar (TyVar x)))
 unify (TVar v) t = varBind v t
 unify t (TVar v) = varBind v t
 unify (TFun t1 t2) (TFun t1' t2')
@@ -91,7 +90,7 @@ envLookup n env = case lookup n env of
 applySubstToEnv :: Subst -> Env -> Env
 applySubstToEnv s env = [(n, applySubst s t) | (n, t) <- env]
 
-newVar n = (TVar (TyVar "none" n), n+1)
+newVar n = (TVar (TyVar n), n+1)
 
 infer :: Env -> Term -> Int -> (Subst, Type, Int)
 
