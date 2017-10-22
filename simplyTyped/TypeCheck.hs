@@ -11,7 +11,7 @@ type TyEnv = [(String, TypeVal)]
 
 checkType :: Term -> TyEnv -> TypeVal
 
-checkType (Variable n) tyEnv =
+checkType (Var n) tyEnv =
     case lookup n tyEnv of
         Just val -> val
         Nothing  -> error ("unbound variable " ++ n)
@@ -24,12 +24,12 @@ checkType (Assign n expr) tyEnv =
 
 checkType (Lambda n b) tyEnv = TyFunc n b tyEnv
 
-checkType (App e1 e2) tyEnv =
+checkType (Apl e1 e2) tyEnv =
     case checkType e2 tyEnv of
         TyFunc n b tyEnv' -> checkType b ((n,checkType e1 tyEnv):tyEnv')
         _                 -> error ("Applications require function type")
 
-checkType (Const num) tyEnv = TyNum
+checkType (IntConst num) tyEnv = TyNum
 
 checkType (MathOp op e1 e2) tyEnv =
     case (checkType e1 tyEnv, checkType e2 tyEnv) of
@@ -39,8 +39,8 @@ checkType (MathOp op e1 e2) tyEnv =
 checkType (Let n e b) tyEnv =
      checkType b ((n, checkType e tyEnv):tyEnv)
 
-checkType ConstTrue  tyEnv = TyBool
-checkType ConstFalse tyEnv = TyBool
+checkType (BoolConst True)  tyEnv = TyBool
+checkType (BoolConst False) tyEnv = TyBool
 
 checkType (Equals e1 e2) tyEnv =
     case (checkType e1 tyEnv, checkType e2 tyEnv) of

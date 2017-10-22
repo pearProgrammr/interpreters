@@ -14,7 +14,7 @@ data Val = Num Int
 type Env = [(String, Val)]
 
 eval :: Term -> Env -> (Val, Env)
-eval (Variable n) env =
+eval (Var n) env =
     case lookup n env of
          Just val -> (val, env)
          Nothing  -> error ("Unbound variable " ++ n)
@@ -29,14 +29,14 @@ eval (Lambda n body) env = (Func n body env, env)
 
 eval (Let n expr body) env = (fst (eval body ((n, fst(eval expr env)):env)), env)
 
-eval (App body param) env =
+eval (Apl body param) env =
     case eval body env of
          (Func n body env', env'') -> (fst (eval body ((n, fst(eval param env)):env')), env)
          _                         -> error ("Function required at the left-side of application")
 
 
 -- Built-in integers
-eval (Const numval) env = (Num numval, env)
+eval (IntConst numval) env = (Num numval, env)
 
 eval (MathOp op e1 e2) env =
     case (eval e1 env, eval e2 env) of
@@ -49,8 +49,8 @@ eval (MathOp op e1 e2) env =
 
 
 -- Built-in booleans
-eval (ConstFalse) env = (Boolean False, env)
-eval (ConstTrue ) env = (Boolean True, env)
+eval (BoolConst False) env = (Boolean False, env)
+eval (BoolConst True ) env = (Boolean True, env)
 
 eval (Equals e1 e2) env =
     case (eval e1 env, eval e2 env) of
@@ -67,10 +67,10 @@ eval (If e1 e2 e3) env =
 
 -- use this for debugging
 printTerm :: Term -> String
-printTerm (Variable n)       = "Var " ++ n ++ " "
+printTerm (Var n)       = "Var " ++ n ++ " "
 printTerm (Lambda n t)       = "Lambda " ++ n ++ " " ++ printTerm t ++ " "
-printTerm (App t1 t2)        = "App " ++ printTerm t1 ++ printTerm t2 ++ " "
-printTerm (Const val)        = "Constant Value " ++ show val
+printTerm (Apl t1 t2)        = "Apl " ++ printTerm t1 ++ printTerm t2 ++ " "
+printTerm (IntConst val)        = "Constant Value " ++ show val
 printTerm (MathOp Add e1 e2) = printTerm e1 ++ " + " ++ printTerm e2 ++ " "
 printTerm (MathOp Sub e1 e2) = printTerm e1 ++ " - " ++ printTerm e2 ++ " "
 printTerm (MathOp Mul e1 e2) = printTerm e1 ++ " * " ++ printTerm e2 ++ " "

@@ -1,14 +1,13 @@
 module Terms where
 
 type Name = String
-data Term = Variable Name
-          | Const Int 
+data Term = Var Name
+          | IntConst Int
           | Lambda Name Term
-          | App Term Term
+          | Apl Term Term
           | MathOp Op Term Term
           | Let Name Term Term
-          | ConstTrue
-          | ConstFalse
+          | BoolConst Bool
           | Equals Term Term
           | If Term Term Term
           | Assign String Term
