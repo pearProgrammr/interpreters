@@ -79,6 +79,8 @@ varBind v t = if (v `elem` vars t)
                     vars (TFun l r) = vars l ++ vars r
 
 type Env = [(Name, Type)]
+emptyEnv::Env
+emptyEnv=[]
 
 extend env (n,t) = (n,t):env
 
@@ -90,6 +92,89 @@ envLookup n env = case lookup n env of
 applySubstToEnv :: Subst -> Env -> Env
 applySubstToEnv s env = [(n, applySubst s t) | (n, t) <- env]
 
+-- Type inference-related code starts here
+-- monadic style
+data M a = M (Int -> (a, Int))
+apply (M f) = f
+
+instance Functor M where
+  fmap f m = M (\n -> let (x, n') = apply m n
+                      in  (f x, n'))
+
+instance Applicative M where
+  pure x  = M (\n -> (x, n))
+  f <*> x = M (\n -> let (f1, n1) = apply f n
+                         (x1, n2) = apply x n1
+                     in (f1 $ x1, n2))
+
+instance Monad M where
+  -- (>>=) :: M a -> (a -> M b) -> M b
+  x >>= f = M (\n -> let (x1, n1) = apply x n
+                         M h = f x1
+                     in h n1)
+
+run :: M a -> Int -> a
+run (M f) n = fst (f n)
+
+nVar :: M Type
+nVar = M (\n -> (TVar (TyVar n), n+1))
+
+infer2 :: Env -> Term -> M (Subst, Type)
+infer2 env (IntConst n)
+  = do
+    return ([], TInt)
+
+infer2 env (BoolConst n)
+  = do
+    return ([], TBool)
+
+infer2 env (Lambda v e)
+  = do
+    u <- nVar
+    (s, t) <- infer2 ((v, u):env) e
+    return (s, TFun (applySubst s u) t)
+
+infer2 env (Var v)
+  = do
+    return ([], envLookup v env)
+
+infer2 env (Apl l r)
+  = do
+    (s1, t1) <- infer2 env l
+    (s2, t2) <- infer2 (applySubstToEnv s1 env) r
+    v <- nVar
+    return (unify (applySubst s2 t1) (TFun t2 v) @@ s2 @@ s1,
+            applySubst (unify (applySubst s2 t1) (TFun t2 v)) v)
+
+infer2 env (MathOp op num1 num2)
+  = do
+    (s1, t1) <- infer2 env num1
+    (s2, t2) <- infer2 (applySubstToEnv (unify t1 TInt) env) num2
+    return ((unify t2 TInt) @@ (unify t1 TInt), TInt)
+
+infer2 env (Let v x y)
+  = do
+    (s1, t1) <- infer2 env x
+    (s2, t2) <- infer2 ((v, t1):(applySubstToEnv s1 env)) y
+    return (s2 @@ s1, t2)
+
+infer2 env (Assign v t)
+  = infer2 env t
+
+infer2 env (Equals x y)
+  = do
+    (s1, t1) <- infer2 env x
+    (s2, t2) <- infer2 (applySubstToEnv s1 env) y
+    return (unify (applySubst s2 t1) t2 @@ s2 @@ s1, TBool)
+
+infer2 env (If c e1 e2)
+  = do
+    (s1, t1) <- infer2 env c
+    (s2, t2) <- infer2 (applySubstToEnv (unify t1 (applySubst s1 TBool)) env) e1
+    (s3, t3) <- infer2 (applySubstToEnv s2 env)  e2
+    return (unify (applySubst s3 t2) t3 @@ s3 @@ s2 @@ s1, t3)
+
+-- functional style
 newVar n = (TVar (TyVar n), n+1)
 
 infer :: Env -> Term -> Int -> (Subst, Type, Int)
@@ -165,4 +250,5 @@ test10 = Lambda "y" (Lambda "x" (Equals (Var "y") (Var "x")))
 test11 = Lambda "x" (Equals (MathOp Add (Var "x") (IntConst 1)) (BoolConst True))
 
 getType (_,x,_) = x
-runTest tst = prettyType  (getType  (infer [] tst 0))
+runTest tst = prettyType (getType (infer emptyEnv tst 0))
+runTest2 tst = prettyType (snd (run (infer2 emptyEnv tst) 0))
