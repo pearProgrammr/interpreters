@@ -204,9 +204,9 @@ infer env (Apl l r) n
 infer env (MathOp op num1 num2) n
   = let (s1, t1, n1) = infer env num1 n
         s1' = unify t1 TInt
-        (s2, t2, n2) = infer (applySubstToEnv s1' env) num2 n1
+        (s2, t2, n2) = infer (applySubstToEnv (s1' @@ s1) env) num2 n1
         s2' = unify t2 TInt
-    in (s2' @@ s1', TInt, n2)
+    in (s2' @@ s2 @@ s1' @@ s1, TInt, n2)
 
 -- note: this Let statement does not yet support a recursive let.
 infer env (Let v x y) n
