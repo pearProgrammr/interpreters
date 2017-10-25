@@ -17,7 +17,7 @@ data TyVar = TyVar Int
 prettyType :: Type -> String
 prettyType TInt = "Int"
 prettyType TBool = "Bool"
-prettyType (TFun x y) = prettyType x ++ " -> " ++ prettyType y
+prettyType (TFun x y) = "(" ++ prettyType x ++ " -> " ++ prettyType y ++ ")"
 prettyType (TVar (TyVar num)) = varNumToType num
 
 varNumToType :: Int -> String
@@ -248,6 +248,11 @@ test8 = Lambda "z" (Lambda "y" (Lambda "x" (Apl (Apl (Var "x") (Var "z")) (Var "
 test9 = Lambda "x" (Equals (Var "x") (IntConst 8))
 test10 = Lambda "y" (Lambda "x" (Equals (Var "y") (Var "x")))
 test11 = Lambda "x" (Equals (MathOp Add (Var "x") (IntConst 1)) (BoolConst True))
+test12 = Lambda "x" (Apl test13 test13)
+test13 = MathOp Add (IntConst 1) (Var "x")
+test14 = MathOp Add (Var "x") (Var "x")
+test15 = (Var "x")
+
 
 getType (_,x,_) = x
 runTest tst = prettyType (getType (infer emptyEnv tst 0))
