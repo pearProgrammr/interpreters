@@ -260,6 +260,26 @@ infErr env (MathOp op num1 num2) n
                                                       return (s2' @@ s2 @@ s1' @@ s1, TInt, n2)
 
 
+-- error and state together!
+data StErr a = StErr (Int -> Res (a, Int))
+
+app (StErr f) n = f n
+
+instance Functor StErr where
+  fmap f x = StErr (\n -> case app x n of
+                            Err s -> Err s
+                            Answer (x', n) -> Answer (f x', n))
+
+instance Applicative StErr where
+  pure x = StErr (\n -> Answer (x, n))
+  f <*> x = StErr (\n -> case app f n of
+                           Err s -> Err s
+                           Answer (f', n') -> case app x n' of
+                                                Err s -> Err s
+                                                Answer (x', n'') -> Answer (f' x', n''))
+
+--infStEr :: Env -> Term -> StErr (SubSt, Type)
+
 -- functional style
 newVar n = (TVar (TyVar n), n+1)
 
