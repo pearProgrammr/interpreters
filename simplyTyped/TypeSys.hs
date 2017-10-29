@@ -261,25 +261,138 @@ infErr env (MathOp op num1 num2) n
 
 
 -- error and state together!
-data StErr a = StErr (Int -> Res (a, Int))
+data StErr a = StErr (Subst -> Int -> Res (a, Subst, Int))
 
-app (StErr f) n = f n
+app (StErr f) s n = f s n
 
 instance Functor StErr where
-  fmap f x = StErr (\n -> case app x n of
-                            Err s -> Err s
-                            Answer (x', n) -> Answer (f x', n))
+  fmap f x = StErr (\s n -> case app x s n of
+                            Err str -> Err str
+                            Answer (x', s', n') -> Answer (f x', s', n'))
 
 instance Applicative StErr where
-  pure x = StErr (\n -> Answer (x, n))
-  f <*> x = StErr (\n -> case app f n of
-                           Err s -> Err s
-                           Answer (f', n') -> case app x n' of
-                                                Err s -> Err s
-                                                Answer (x', n'') -> Answer (f' x', n''))
+  pure x = StErr (\s n -> Answer (x, s, n))
+  f <*> x = StErr (\s n -> case app f s n of
+                           Err str -> Err str
+                           Answer (f', s', n') -> case app x s' n' of
+                                                Err str -> Err str
+                                                Answer (x', s'', n'') -> Answer (f' x', s', n''))
 
---infStEr :: Env -> Term -> StErr (SubSt, Type)
+instance Monad StErr where
+  -- f >>= g  :: StErr a -> (a -> StErr b) -> StErr b
+  x >>= f = StErr (\s n -> case app x s n of
+                             Err str -> Err str
+                             Answer (x', s', n') -> let StErr h = f x'
+                                                       in h s' n')
 
+
+--eLookup :: Name -> Env -> Type
+{-
+eLookup n env = case lookup n env of
+                       Just t -> return t
+                       Nothing -> Err ("Unbound variable")
+-}
+--run2 :: StErr a -> Subst-> Int -> a
+run2 f s n = printres $ getRes (app f s n)
+               where getRes (Err str) = Left str
+                     getRes (Answer (t, s, n)) = Right t
+                     printres (Left str) = do
+                                           putStrLn str
+                                           return ()
+                     printres (Right t) = do
+                                          putStrLn (prettyType t)
+                                          return ()
+
+runTest4 tst = run2 (infStEr [] tst) [] 0
+
+nVar2 :: StErr Type
+nVar2 = StErr (\s n -> Answer (TVar (TyVar n), s, n+1))
+
+getSubst :: StErr Subst
+getSubst = StErr (\s n -> Answer (s, s, n))
+
+unify3 :: Type -> Type -> StErr ()
+unify3 t1 t2 = StErr (\s n -> Answer ((), unify (applySubst s t1) (applySubst s t2) @@ s, n))
+
+extendSubst :: Subst -> StErr ()
+extendSubst s' = StErr (\s n -> Answer ((), s' @@ s, n))
+
+-- monadic style (result)
+
+infStEr :: Env -> Term -> StErr Type
+infStEr env (Var v)
+  = case lookup v env of
+      Just t -> StErr (\s n -> Answer (t, s, n))
+      Nothing -> StErr (\s n -> Err ("Unbound variable " ++ v))
+
+infStEr env (IntConst num)
+  = do
+    return TInt
+
+infStEr env (BoolConst b)
+  = do
+    return TBool
+
+infStEr env (Lambda v e)
+  = do
+    u <- nVar2
+    t <- infStEr ((v, u):env) e
+    s <- getSubst
+    return (TFun (applySubst s u) t)
+
+
+infStEr env (Apl l r)
+  = do
+    t1 <- infStEr env l
+    s1 <- getSubst
+    t2 <- infStEr (applySubstToEnv s1 env) r
+    s2 <- getSubst
+    v <- nVar2
+    unify3 (applySubst s2 t1) (TFun t2 v)
+    s3 <- getSubst
+    return (applySubst s3 v)
+
+
+infStEr env (MathOp op n1 n2)
+  = do
+    t1 <- infStEr env n1
+    s1 <- getSubst
+    unify3 TInt t1
+    s1' <- getSubst
+    t2 <- infStEr (applySubstToEnv (s1' @@ s1) env) n2
+    s2 <- getSubst
+    unify3 TInt t2
+    unify3 TInt (applySubst s2 t1)
+    return (TInt)
+
+{-
+infStEr env (Let v x y)
+  = do
+    (s1, t1) <- infStEr env x
+    (s2, t2) <- infStEr ((v,t1):(applySubstToEnv s1 env)) y
+    return (s2 @@ s1, t2) -- do we actually need s1 here? I think we do because we need the information from x...
+
+infStEr env (Assign v e)
+  = do
+    infStEr env e -- not return infStEr env e because we don't need to put it into another StErr
+
+infStEr env (Equals x y)
+  = do
+    (s1, t1) <- infStEr env x
+    (s2, t2) <- infStEr (applySubstToEnv s1 env) y
+    let s3 = unify t2 (applySubst s2 t1)
+    return (s3 @@ s2 @@ s1, TBool)
+
+infStEr env (If c e1 e2)
+  = do
+    (s1, t1) <- infStEr env c
+    let s1' = unify t1 TBool -- the conditional should evaluate to a boolean type
+    (s2, t2) <- infStEr env e1
+    (s3, t3) <- infStEr env e2
+    let s3' = unify t3 (applySubst s3 t2)
+    return (s3' @@ s3 @@ s2 @@ s1' @@ s1, t3)
+
+-}
 -- functional style
 newVar n = (TVar (TyVar n), n+1)
 
@@ -358,6 +471,7 @@ test12 = Lambda "x" (Apl test13 test13)
 test13 = MathOp Add (IntConst 1) (Var "x")
 test14 = MathOp Add (Var "x") (Var "x")
 test15 = (Var "x")
+test16 = MathOp Add (IntConst 1) (BoolConst True)
 
 testList = [test01, test02, test03, test04, test05, test06, test07, test08, test09, test10, test11, test12, test13, test14, test15] 
 
