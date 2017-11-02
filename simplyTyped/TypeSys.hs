@@ -276,7 +276,8 @@ instance Applicative StErr where
                            Err str -> Err str
                            Answer (f', s', n') -> case app x s' n' of
                                                 Err str -> Err str
-                                                Answer (x', s'', n'') -> Answer (f' x', s', n''))
+                                                Answer (x', s'', n'') -> Answer (f' x', s', n'')) -- should be s''!!
+-- TODO: rewrite using bind or liftM2
 
 instance Monad StErr where
   -- f >>= g  :: StErr a -> (a -> StErr b) -> StErr b
@@ -294,7 +295,7 @@ eLookup n env = case lookup n env of
 -}
 --run2 :: StErr a -> Subst-> Int -> a
 run2 f s n = printres $ getRes (app f s n)
-               where getRes (Err str) = Left str
+               where getRes (Err str) = Left str -- TODO: simplify
                      getRes (Answer (t, s, n)) = Right t
                      printres (Left str) = do
                                            putStrLn str
@@ -312,58 +313,82 @@ getSubst :: StErr Subst
 getSubst = StErr (\s n -> Answer (s, s, n))
 
 unify3 :: Type -> Type -> StErr ()
-unify3 t1 t2 = StErr (\s n -> Answer ((), unify (applySubst s t1) (applySubst s t2) @@ s, n))
+--unify3 t1 t2 = StErr (\s n -> Answer ((), unify2 (applySubst s t1) (applySubst s t2) @@ s, n))
+unify3 t1 t2 = StErr (\s n -> case unify2 (applySubst s t1) (applySubst s t2) of
+                               Err msg -> Err msg
+                               Answer u -> Answer ((), u @@ s, n))
 
 extendSubst :: Subst -> StErr ()
 extendSubst s' = StErr (\s n -> Answer ((), s' @@ s, n))
+
+retErrn :: String -> StErr a
+retErrn str = StErr (\ s n -> Err str)
+
+check env e t
+  = do
+    t' <- infStEr env e
+    unify3 t t'
+
+
 
 -- monadic style (result)
 
 infStEr :: Env -> Term -> StErr Type
 infStEr env (Var v)
   = case lookup v env of
-      Just t -> StErr (\s n -> Answer (t, s, n))
-      Nothing -> StErr (\s n -> Err ("Unbound variable " ++ v))
+      --Just t -> StErr (\s n -> Answer (t, s, n))
+      Just t -> return t
+      --Nothing -> StErr (\s n -> Err ("Unbound variable " ++ v))
+      Nothing -> retErrn ("Unbound variable " ++ v)
+
 
 infStEr env (IntConst num)
-  = do
-    return TInt
+  = return TInt
 
 infStEr env (BoolConst b)
-  = do
-    return TBool
+  = return TBool
 
 infStEr env (Lambda v e)
   = do
     u <- nVar2
     t <- infStEr ((v, u):env) e
-    s <- getSubst
-    return (TFun (applySubst s u) t)
+    return (TFun u t) -- TODO: take care of the apply in a top-level function
 
 
 infStEr env (Apl l r)
   = do
+--    t1 <- infStEr env l
+--    s1 <- getSubst
+--    t2 <- infStEr (applySubstToEnv s1 env) r
+--    s2 <- getSubst
+--    v <- nVar2
+--    unify3 (applySubst s2 t1) (TFun t2 v)
+--    s3 <- getSubst
+--    return (applySubst s3 v)
     t1 <- infStEr env l
-    s1 <- getSubst
-    t2 <- infStEr (applySubstToEnv s1 env) r
-    s2 <- getSubst
+    t2 <- infStEr env r
     v <- nVar2
-    unify3 (applySubst s2 t1) (TFun t2 v)
-    s3 <- getSubst
-    return (applySubst s3 v)
+    unify3 t1 (TFun t2 v)
+    return v
+
 
 
 infStEr env (MathOp op n1 n2)
   = do
-    t1 <- infStEr env n1
-    s1 <- getSubst
-    unify3 TInt t1
-    s1' <- getSubst
-    t2 <- infStEr (applySubstToEnv (s1' @@ s1) env) n2
-    s2 <- getSubst
-    unify3 TInt t2
-    unify3 TInt (applySubst s2 t1)
-    return (TInt)
+--    t1 <- infStEr env n1
+--    s1 <- getSubst
+--    unify3 TInt t1
+--    s1' <- getSubst
+--    t2 <- infStEr (applySubstToEnv (s1' @@ s1) env) n2
+--    s2 <- getSubst
+--    unify3 TInt t2
+--    unify3 TInt (applySubst s2 t1)
+--    return (TInt)
+    check env n1 TInt
+    check env n2 TInt
+    return TInt
+
+
 
 {-
 infStEr env (Let v x y)
