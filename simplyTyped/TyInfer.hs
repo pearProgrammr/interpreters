@@ -11,7 +11,7 @@ unify t1 t2 = TyInf (\s n -> case unite (applySubst s t1) (applySubst s t2) of
                                Answer u -> Answer ((), u @@ s, n))
 
 newVar :: TyInf Type
-newVar = TyInf (\s n -> Answer (TVar (TyVar n), s, n+1))
+newVar = TyInf (\s n -> Answer (TVar (TyVar (enumId n)), s, n+1))
 
 retErrn :: String -> TyInf a
 retErrn str = TyInf (\ s n -> Err str)

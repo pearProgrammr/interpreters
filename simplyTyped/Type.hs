@@ -1,17 +1,23 @@
 module Type where
 
+import Data.List
 import Data.Char
 
 
 type Name = String
+type Id = String
 data Type = TVar TyVar
           | TInt
           | TBool
           | TFun Type Type
+          | TGen Int
           deriving (Eq, Show)
 
-data TyVar = TyVar Int
+data TyVar = TyVar Id
            deriving (Eq, Show)
+
+enumId :: Int -> Id
+enumId n = "v" ++ show n
 
 class Types t where
   applySubst :: Subst -> t -> t
@@ -47,7 +53,9 @@ prettyType :: Type -> String
 prettyType TInt = "Int"
 prettyType TBool = "Bool"
 prettyType (TFun x y) = "(" ++ prettyType x ++ " -> " ++ prettyType y ++ ")"
-prettyType (TVar (TyVar num)) = varNumToType num
+prettyType (TVar (TyVar id)) = id
+prettyType (TGen n) = varNumToType n
+
 
 varNumToType :: Int -> String
 varNumToType n
