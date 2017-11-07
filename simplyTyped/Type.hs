@@ -36,6 +36,32 @@ instance Types Type where
                         unique []     = []
   tv _          = []
 
+instance Types a => Types [a] where
+  applySubst s = map (applySubst s)
+  tv = nub . concat . map tv
+
+
+-- Type schemes for polymorphism
+data Scheme = Forall [TyVar] Type
+            deriving Eq
+
+instance Types Scheme where
+  applySubst s (Forall tvs t) = Forall tvs (applySubst s t)
+  tv (Forall tvs t) = tv t
+
+
+-- Instantiation of a type scheme
+inst :: Scheme -> [Type] -> Type
+inst (Forall vs t) ts = applySubst (zip vs ts) t
+
+-- Refined version of generalization
+gen :: Env -> Type -> Scheme
+gen env t = Forall (tv t \\ tvInEnv env) t
+  where tvInEnv :: Env -> [TyVar]
+        tvInEnv env = concat [tv t | (id, t) <- env]
+
+
+-- Substitutions
 type Subst = [(TyVar, Type)]
 nullSubst :: Subst
 nullSubst = []
