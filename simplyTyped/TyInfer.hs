@@ -10,8 +10,22 @@ unify t1 t2 = TyInf (\s n -> case unite (applySubst s t1) (applySubst s t2) of
                                Err msg -> Err msg
                                Answer u -> Answer ((), u @@ s, n))
 
+-- is there a way to chain these things??
 newVar :: TyInf Type
 newVar = TyInf (\s n -> Answer (TVar (TyVar (enumId n)), s, n+1))
+
+-- There has to be a better way to do this...
+enum :: Int -> TyInf Type
+enum idx = newVar
+
+
+-- adapted from freshInst in THIH
+newInst :: Scheme -> TyInf Type
+newInst (Forall tvs t)
+  = do
+    ts <- mapM enum [0..(length tvs)] -- There has to be a better way to do this
+    return (inst ts t)
+
 
 retErrn :: String -> TyInf a
 retErrn str = TyInf (\ s n -> Err str)
@@ -25,8 +39,8 @@ infer :: Env -> Term -> TyInf Type
 
 infer env (Var v)
   = case lookup v env of
-      Just t -> return t
       Nothing -> retErrn ("Unbound variable " ++ v)
+      Just tSch -> newInst tSch
 
 infer env (IntConst num)
   = return TInt
@@ -37,7 +51,7 @@ infer env (BoolConst b)
 infer env (Lambda v e)
   = do
     u <- newVar
-    t <- infer ((v, u):env) e
+    t <- infer ((v, toScheme u):env) e
     return (TFun u t)
 
 infer env (Apl l r)
@@ -72,9 +86,9 @@ infer env (If c e1 e2)
 infer env (Assign v e)
   = infer env e
 
-infer env (Let v x e)
+infer env (Let v x e) -- it seems like let is the crux of all of this.. why was it even included? 
   = do
     t1 <- infer env x
-    t2 <- infer ((v,t1):env) e
+    t2 <- infer ((v,t1):env) e -- TODO: Start here
     return t2
 

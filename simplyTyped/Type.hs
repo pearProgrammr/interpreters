@@ -49,17 +49,41 @@ instance Types Scheme where
   applySubst s (Forall tvs t) = Forall tvs (applySubst s t)
   tv (Forall tvs t) = tv t
 
+class Instantiate t where
+  inst :: [Type] -> t -> t
 
+instance Instantiate Type where
+  inst ts (TFun t1 t2) = TFun (inst ts t1) (inst ts t2)
+  inst ts (TGen n) = ts !! n
+  inst ts t = t
+
+{-
 -- Instantiation of a type scheme
-inst :: Scheme -> [Type] -> Type
-inst (Forall vs t) ts = applySubst (zip vs ts) t
+inst :: [Type] -> Scheme -> Type
+inst ts (Forall vs t) = applySubst (zip vs ts) t
+-}
+
+
+-- adapted from quantify in THIH
+gen :: [TyVar] -> Type -> Scheme
+gen vars t = Forall vars' (applySubst s t)
+                    where vars' = [v | v <- tv t, v `elem` vars]
+                          s     = zip vars' (map TGen [0..])
+
+-- taken from THIH
+toScheme :: Type -> Scheme
+toScheme t = Forall [] t
 
 -- Refined version of generalization
+{- WORK IN PROGRESS
 gen :: Env -> Type -> Scheme
 gen env t = Forall (tv t \\ tvInEnv env) t
   where tvInEnv :: Env -> [TyVar]
         tvInEnv env = concat [tv t | (id, t) <- env]
+-}
 
+
+type Assump = (Id, Scheme)
 
 -- Substitutions
 type Subst = [(TyVar, Type)]
@@ -70,7 +94,7 @@ nullSubst = []
 (@@) :: Subst -> Subst -> Subst
 s1 @@ s2 = [(u, applySubst s1 t) | (u, t) <- s2] ++ s1
 
-type Env = [(Name, Type)]
+type Env = [Assump]
 emptyEnv::Env
 emptyEnv=[]
 
