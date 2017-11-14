@@ -89,6 +89,6 @@ infer env (Assign v e)
 infer env (Let v x e) -- it seems like let is the crux of all of this.. why was it even included? 
   = do
     t1 <- infer env x
-    t2 <- infer ((v,t1):env) e -- TODO: Start here
+    t2 <- infer ((v, gen (tv t1) t1):env) e -- generalize the type of x
     return t2
 

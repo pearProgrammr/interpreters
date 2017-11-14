@@ -1,6 +1,8 @@
 module TyTest where
 
 import Terms
+import TyInfer
+import TyInfM
 
 
 test01 = Lambda "x" (MathOp Add (Var "x") (IntConst 1))
@@ -23,8 +25,8 @@ test17 = Lambda "x" eq
 eq = Equals (Var "x") (BoolConst True)
 test18 = Lambda "x" (If eq (IntConst 1) (IntConst 2))
 test19 = Let "x" (BoolConst True) (If (Var "x") (IntConst 1) (IntConst 2))
-
+test20 = Lambda "x" (Lambda "y" (Var "x"))
 testList = [test01, test02, test03, test04, test05, test06, test07, test08, test09, test10, test11, test12, test13, test14, test15] 
 
-runTest4 tst = run (infStEr [] tst) [] 0
+runTest4 tst = run (infer [] tst) [] 0
 
