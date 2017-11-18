@@ -10,7 +10,7 @@ Main : Tokens.hs Terms.hs Grammar.hs Eval.hs Main.hs
 	ghc --make Main
 
 install: all
-	sudo mv SimplyTyped /usr/local/bin/
+	sudo mv Main /usr/local/bin/
 
 run: install
 	Main

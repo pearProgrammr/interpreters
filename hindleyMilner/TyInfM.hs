@@ -37,7 +37,7 @@ instance Applicative TyInf where
                            Err str -> Err str
                            Answer (f', s', n') -> case app x s' n' of
                                                 Err str -> Err str
-                                                Answer (x', s'', n'') -> Answer (f' x', s', n'')) -- should be s''!!
+                                                Answer (x', s'', n'') -> Answer (f' x', s'', n''))
 
 instance Monad TyInf where
   -- f >>= g  :: TyInf a -> (a -> TyInf b) -> TyInf b
