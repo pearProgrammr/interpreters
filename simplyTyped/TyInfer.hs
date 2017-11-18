@@ -14,7 +14,7 @@ unify t1 t2 = TyInf (\s n -> case unite (applySubst s t1) (applySubst s t2) of
 newVar :: TyInf Type
 newVar = TyInf (\s n -> Answer (TVar (TyVar (enumId n)), s, n+1))
 
--- There has to be a better way to do this...
+-- There has to be a better way to do this... it all ends up looking similar
 enum :: Int -> TyInf Type
 enum idx = newVar
 
@@ -25,7 +25,6 @@ newInst (Forall tvs t)
   = do
     ts <- mapM enum [0..(length tvs)] -- There has to be a better way to do this
     return (inst ts t)
-
 
 retErrn :: String -> TyInf a
 retErrn str = TyInf (\ s n -> Err str)
@@ -38,7 +37,7 @@ check env e t
 infer :: Env -> Term -> TyInf Type
 
 infer env (Var v)
-  = case lookup v env of
+  = case envLookup v env of
       Nothing -> retErrn ("Unbound variable " ++ v)
       Just tSch -> newInst tSch
 
@@ -51,7 +50,7 @@ infer env (BoolConst b)
 infer env (Lambda v e)
   = do
     u <- newVar
-    t <- infer ((v, toScheme u):env) e
+    t <- infer (extendEnv env (v, toScheme u)) e
     return (TFun u t)
 
 infer env (Apl l r)
@@ -86,9 +85,8 @@ infer env (If c e1 e2)
 infer env (Assign v e)
   = infer env e
 
-infer env (Let v x e) -- it seems like let is the crux of all of this.. why was it even included? 
+infer env (Let v x e)
   = do
     t1 <- infer env x
-    t2 <- infer ((v, gen (tv t1) t1):env) e -- generalize the type of x
+    t2 <- infer (extendEnv env (v, gen env t1)) e -- generalize the type of x
     return t2
-

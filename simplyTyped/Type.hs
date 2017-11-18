@@ -41,6 +41,7 @@ instance Types a => Types [a] where
   tv = nub . concat . map tv
 
 
+
 -- Type schemes for polymorphism
 data Scheme = Forall [TyVar] Type
             deriving Eq
@@ -63,12 +64,17 @@ inst :: [Type] -> Scheme -> Type
 inst ts (Forall vs t) = applySubst (zip vs ts) t
 -}
 
-
 -- adapted from quantify in THIH
+gen :: Env -> Type -> Scheme
+gen env t = Forall vars (applySubst s t)
+              where vars = (tv t \\ tv env)
+                    s = zip vars (map TGen [0..])
+{-
 gen :: [TyVar] -> Type -> Scheme
 gen vars t = Forall vars' (applySubst s t)
                     where vars' = [v | v <- tv t, v `elem` vars]
                           s     = zip vars' (map TGen [0..])
+-}
 
 -- taken from THIH
 toScheme :: Type -> Scheme
@@ -90,13 +96,26 @@ type Subst = [(TyVar, Type)]
 nullSubst :: Subst
 nullSubst = []
 
+
 -- composition of two substitutions
 (@@) :: Subst -> Subst -> Subst
 s1 @@ s2 = [(u, applySubst s1 t) | (u, t) <- s2] ++ s1
 
-type Env = [Assump]
+data Env = Env [Assump]
 emptyEnv::Env
-emptyEnv=[]
+emptyEnv = Env []
+
+extendEnv :: Env -> Assump -> Env
+extendEnv (Env as) elt = Env (elt:as)
+
+envLookup :: Id -> Env -> Maybe Scheme
+envLookup x (Env as) = lookup x as
+
+instance Types Env where
+  applySubst s as = undefined
+  tv as = nub (concat (map tv (getSchemes as)))
+          where getSchemes (Env as) = map snd as
+
 
 -- pretty print
 prettyType :: Type -> String
