@@ -4,8 +4,6 @@ import Grammar
 import Tokens
 import Terms
 
-evalSimplyTyped = eval
-
 data Val = Num Int
          | Boolean Bool
          | Func Name Term Env

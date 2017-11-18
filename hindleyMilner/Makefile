@@ -1,4 +1,4 @@
-all: SimplyTyped
+all: Main
 
 Tokens.hs : Tokens.x
 	alex Tokens.x
@@ -6,14 +6,14 @@ Tokens.hs : Tokens.x
 Grammar.hs : Grammar.y
 	happy Grammar.y
 
-SimplyTyped : Tokens.hs Terms.hs Grammar.hs TypeCheck.hs Eval.hs SimplyTyped.hs
-	ghc --make SimplyTyped
+Main : Tokens.hs Terms.hs Grammar.hs Eval.hs Main.hs
+	ghc --make Main
 
 install: all
 	sudo mv SimplyTyped /usr/local/bin/
 
 run: install
-	SimplyTyped
+	Main
 
 clean:
-	rm -f SimplyTyped Grammar.hs Tokens.hs *.o *.hi
+	rm -f Main Grammar.hs Tokens.hs *.o *.hi
