@@ -57,6 +57,8 @@ instance Instantiate Type where
   inst ts (TGen n) = ts !! n
   inst ts t = t
 
+type Assump = (Id, Scheme)
+
 -- adapted from quantify in THIH
 gen :: TyEnv -> Type -> Scheme
 gen tyEnv t = Forall vars (apply s t)
@@ -67,9 +69,8 @@ toScheme :: Type -> Scheme
 toScheme t = Forall [] t
 
 
-type Assump = (Id, Scheme)
-
 -- Substitutions
+
 type Subst = [(TyVar, Type)]
 nullSubst :: Subst
 nullSubst = []
@@ -78,6 +79,9 @@ nullSubst = []
 -- composition of two substitutions
 (@@) :: Subst -> Subst -> Subst
 s1 @@ s2 = [(u, apply s1 t) | (u, t) <- s2] ++ s1
+
+
+-- Type Environment
 
 data TyEnv = TyEnv [Assump]
 emptyTyEnv::TyEnv
@@ -93,6 +97,12 @@ instance Types TyEnv where
   apply s as = undefined
   tv as = nub (concat (map tv (getSchemes as)))
           where getSchemes (TyEnv as) = map snd as
+
+
+-- Constructor Environment
+
+type CEnv = [(Name, [Constructor])]
+type Constructor = (Name, [Type])
 
 
 -- pretty print

@@ -22,35 +22,35 @@ instance Monad Res where
               Answer x' -> f x'
               Err s -> Err s
 
-data TyInf a = TyInf (Subst -> Int -> Res (a, Subst, Int))
+data TyInf a = TyInf (CEnv -> Subst -> Int -> Res (a, CEnv, Subst, Int))
 
-app (TyInf f) s n = f s n
+app (TyInf f) c s n = f c s n
 
 instance Functor TyInf where
-  fmap f x = TyInf (\s n -> case app x s n of
+  fmap f x = TyInf (\c s n -> case app x c s n of
                             Err str -> Err str
-                            Answer (x', s', n') -> Answer (f x', s', n'))
+                            Answer (x', c', s', n') -> Answer (f x', c', s', n'))
 
 instance Applicative TyInf where
-  pure x = TyInf (\s n -> Answer (x, s, n))
-  f <*> x = TyInf (\s n -> case app f s n of
+  pure x = TyInf (\c s n -> Answer (x, c, s, n))
+  f <*> x = TyInf (\c s n -> case app f c s n of
                            Err str -> Err str
-                           Answer (f', s', n') -> case app x s' n' of
+                           Answer (f', c', s', n') -> case app x c' s' n' of
                                                 Err str -> Err str
-                                                Answer (x', s'', n'') -> Answer (f' x', s'', n''))
+                                                Answer (x', c'', s'', n'') -> Answer (f' x', c'', s'', n''))
 
 instance Monad TyInf where
   -- f >>= g  :: TyInf a -> (a -> TyInf b) -> TyInf b
-  x >>= f = TyInf (\s n -> case app x s n of
+  x >>= f = TyInf (\c s n -> case app x c s n of
                              Err str -> Err str
-                             Answer (x', s', n') -> let TyInf h = f x'
-                                                       in h s' n')
+                             Answer (x', c', s', n') -> let TyInf h = f x'
+                                                       in h c' s' n')
 
-run f s n = printres (app f s n)
+run f c s n = printres (app f c s n)
                where printres (Err str) = do
                                           putStrLn str
                                           return ()
-                     printres (Answer (t, s, n)) = do
+                     printres (Answer (t, c, s, n)) = do
                                           putStrLn (prettyType (apply s t))
                                           return ()
 

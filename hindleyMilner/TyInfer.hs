@@ -6,13 +6,13 @@ import Terms
 
 
 unify :: Type -> Type -> TyInf ()
-unify t1 t2 = TyInf (\s n -> case unite (apply s t1) (apply s t2) of
+unify t1 t2 = TyInf (\c s n -> case unite (apply s t1) (apply s t2) of
                                Err msg -> Err msg
-                               Answer u -> Answer ((), u @@ s, n))
+                               Answer u -> Answer ((), c, u @@ s, n))
 
 -- is there a way to chain these things??
 newVar :: TyInf Type
-newVar = TyInf (\s n -> Answer (TVar (TyVar (enumId n)), s, n+1))
+newVar = TyInf (\c s n -> Answer (TVar (TyVar (enumId n)), c, s, n+1))
 
 -- There has to be a better way to do this... it all ends up looking similar
 enum :: Int -> TyInf Type
@@ -27,7 +27,7 @@ newInst (Forall tvs t)
     return (inst ts t)
 
 retErrn :: String -> TyInf a
-retErrn str = TyInf (\ s n -> Err str)
+retErrn str = TyInf (\c s n -> Err str)
 
 check tyEnv e t
   = do
@@ -63,6 +63,8 @@ infer tyEnv (Let v x e)
     t2 <- infer (extendTyEnv tyEnv (v, gen tyEnv t1)) e -- generalize the type of x
     return t2
 
+--infer tyEnv (Data Name [Constr])
+--  = undefined
 
 -- Integer operations
 
