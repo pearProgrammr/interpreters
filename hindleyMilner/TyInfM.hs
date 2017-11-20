@@ -51,7 +51,7 @@ run f s n = printres (app f s n)
                                           putStrLn str
                                           return ()
                      printres (Answer (t, s, n)) = do
-                                          putStrLn (prettyType (applySubst s t))
+                                          putStrLn (prettyType (apply s t))
                                           return ()
 
 --unification algorithm
@@ -64,7 +64,7 @@ unite t (TVar v) = varBind v t
 unite (TFun t1 t2) (TFun t1' t2')
   = do
     s1 <- unite t1 t1'
-    s2 <- unite (applySubst s1 t2) (applySubst s1 t2')
+    s2 <- unite (apply s1 t2) (apply s1 t2')
     return (s2 @@ s1)
 unite t1 t2 = Err ("Cannot unify "++ show t1 ++ " with " ++ show t2)
 

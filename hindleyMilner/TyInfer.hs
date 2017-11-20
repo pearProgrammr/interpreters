@@ -6,7 +6,7 @@ import Terms
 
 
 unify :: Type -> Type -> TyInf ()
-unify t1 t2 = TyInf (\s n -> case unite (applySubst s t1) (applySubst s t2) of
+unify t1 t2 = TyInf (\s n -> case unite (apply s t1) (apply s t2) of
                                Err msg -> Err msg
                                Answer u -> Answer ((), u @@ s, n))
 
@@ -29,64 +29,73 @@ newInst (Forall tvs t)
 retErrn :: String -> TyInf a
 retErrn str = TyInf (\ s n -> Err str)
 
-check env e t
+check tyEnv e t
   = do
-    t' <- infer env e
+    t' <- infer tyEnv e
     unify t t'
 
-infer :: Env -> Term -> TyInf Type
+infer :: TyEnv -> Term -> TyInf Type
 
-infer env (Var v)
-  = case envLookup v env of
+-- core language constructs
+
+infer tyEnv (Var v)
+  = case tyEnvLookup v tyEnv of
       Nothing -> retErrn ("Unbound variable " ++ v)
       Just tSch -> newInst tSch
 
-infer env (IntConst num)
-  = return TInt
-
-infer env (BoolConst b)
-  = return TBool
-
-infer env (Lambda v e)
+infer tyEnv (Lambda v e)
   = do
     u <- newVar
-    t <- infer (extendEnv env (v, toScheme u)) e
+    t <- infer (extendTyEnv tyEnv (v, toScheme u)) e
     return (TFun u t)
 
-infer env (Apl l r)
+infer tyEnv (Apl l r)
   = do
-    t1 <- infer env l
-    t2 <- infer env r
+    t1 <- infer tyEnv l
+    t2 <- infer tyEnv r
     v <- newVar
     unify t1 (TFun t2 v)
     return v
 
-infer env (MathOp op n1 n2)
+infer tyEnv (Let v x e)
   = do
-    check env n1 TInt
-    check env n2 TInt
+    t1 <- infer tyEnv x
+    t2 <- infer (extendTyEnv tyEnv (v, gen tyEnv t1)) e -- generalize the type of x
+    return t2
+
+
+-- Integer operations
+
+infer tyEnv (IntConst num)
+  = return TInt
+
+infer tyEnv (MathOp op n1 n2)
+  = do
+    check tyEnv n1 TInt
+    check tyEnv n2 TInt
     return TInt
 
-infer env (Equals x y)
+
+-- Boolean-related operations
+
+infer tyEnv (BoolConst b)
+  = return TBool
+
+infer tyEnv (Equals x y)
   = do
-    t1 <- infer env x
-    t2 <- infer env y
+    t1 <- infer tyEnv x
+    t2 <- infer tyEnv y
     unify t2 t1
     return TBool
 
-infer env (If c e1 e2)
+infer tyEnv (If c e1 e2)
   = do
-    check env c TBool
-    t2 <- infer env e1
-    t3 <- infer env e2
+    check tyEnv c TBool
+    t2 <- infer tyEnv e1
+    t3 <- infer tyEnv e2
     unify t3 t2
     return t3
 
-infer env (Assign v e)
-  = infer env e
+infer tyEnv (Assign v e)
+  = infer tyEnv e
 
-infer env (Let v x e)
-  = do
-    t1 <- infer env x
-    t2 <- infer (extendEnv env (v, gen env t1)) e -- generalize the type of x
-    return t2

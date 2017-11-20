@@ -20,15 +20,15 @@ enumId :: Int -> Id
 enumId n = "v" ++ show n
 
 class Types t where
-  applySubst :: Subst -> t -> t
+  apply :: Subst -> t -> t
   tv    :: t -> [TyVar]
 
 instance Types Type where
-  applySubst s (TVar v) = case lookup v s of
+  apply s (TVar v) = case lookup v s of
                           Just t -> t
                           Nothing -> TVar v
-  applySubst s (TFun l r) = TFun (applySubst s l) (applySubst s r)
-  applySubst s t          = t
+  apply s (TFun l r) = TFun (apply s l) (apply s r)
+  apply s t          = t
 
   tv (TVar u) = [u]
   tv (TFun l r) = unique (tv l ++ tv r)
@@ -37,9 +37,8 @@ instance Types Type where
   tv _          = []
 
 instance Types a => Types [a] where
-  applySubst s = map (applySubst s)
+  apply s = map (apply s)
   tv = nub . concat . map tv
-
 
 
 -- Type schemes for polymorphism
@@ -47,7 +46,7 @@ data Scheme = Forall [TyVar] Type
             deriving Eq
 
 instance Types Scheme where
-  applySubst s (Forall tvs t) = Forall tvs (applySubst s t)
+  apply s (Forall tvs t) = Forall tvs (apply s t)
   tv (Forall tvs t) = tv t
 
 class Instantiate t where
@@ -58,35 +57,14 @@ instance Instantiate Type where
   inst ts (TGen n) = ts !! n
   inst ts t = t
 
-{-
--- Instantiation of a type scheme
-inst :: [Type] -> Scheme -> Type
-inst ts (Forall vs t) = applySubst (zip vs ts) t
--}
-
 -- adapted from quantify in THIH
-gen :: Env -> Type -> Scheme
-gen env t = Forall vars (applySubst s t)
-              where vars = (tv t \\ tv env)
+gen :: TyEnv -> Type -> Scheme
+gen tyEnv t = Forall vars (apply s t)
+              where vars = (tv t \\ tv tyEnv)
                     s = zip vars (map TGen [0..])
-{-
-gen :: [TyVar] -> Type -> Scheme
-gen vars t = Forall vars' (applySubst s t)
-                    where vars' = [v | v <- tv t, v `elem` vars]
-                          s     = zip vars' (map TGen [0..])
--}
-
 -- taken from THIH
 toScheme :: Type -> Scheme
 toScheme t = Forall [] t
-
--- Refined version of generalization
-{- WORK IN PROGRESS
-gen :: Env -> Type -> Scheme
-gen env t = Forall (tv t \\ tvInEnv env) t
-  where tvInEnv :: Env -> [TyVar]
-        tvInEnv env = concat [tv t | (id, t) <- env]
--}
 
 
 type Assump = (Id, Scheme)
@@ -99,22 +77,22 @@ nullSubst = []
 
 -- composition of two substitutions
 (@@) :: Subst -> Subst -> Subst
-s1 @@ s2 = [(u, applySubst s1 t) | (u, t) <- s2] ++ s1
+s1 @@ s2 = [(u, apply s1 t) | (u, t) <- s2] ++ s1
 
-data Env = Env [Assump]
-emptyEnv::Env
-emptyEnv = Env []
+data TyEnv = TyEnv [Assump]
+emptyTyEnv::TyEnv
+emptyTyEnv = TyEnv []
 
-extendEnv :: Env -> Assump -> Env
-extendEnv (Env as) elt = Env (elt:as)
+extendTyEnv :: TyEnv -> Assump -> TyEnv
+extendTyEnv (TyEnv as) elt = TyEnv (elt:as)
 
-envLookup :: Id -> Env -> Maybe Scheme
-envLookup x (Env as) = lookup x as
+tyEnvLookup :: Id -> TyEnv -> Maybe Scheme
+tyEnvLookup x (TyEnv as) = lookup x as
 
-instance Types Env where
-  applySubst s as = undefined
+instance Types TyEnv where
+  apply s as = undefined
   tv as = nub (concat (map tv (getSchemes as)))
-          where getSchemes (Env as) = map snd as
+          where getSchemes (TyEnv as) = map snd as
 
 
 -- pretty print
