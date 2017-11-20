@@ -20,7 +20,9 @@ evalLoop env = do
                  return ()
              else do
                  let tokens = scanTokens input
+                 print tokens
                  let ast = parseSimplyTyped tokens
+                 print ast
                  run (infer (Type.Env []) ast) [] 0
                  let val = eval ast env
                  print $ show val

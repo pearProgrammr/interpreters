@@ -17,6 +17,10 @@ tokens :-
         \*      { \s -> TokenMul }
         \/      { \s -> TokenDiv }
 
+        -- data type declarations
+        Data    { \s -> TokenData }
+        \|      { \s -> TokenBar }
+
         -- logic and logical operands --
         ==      { \s -> TokenEq }
         true    { \s -> TokenTrue }
@@ -58,6 +62,8 @@ data Token = TokenLambda
            | TokenIf
            | TokenThen
            | TokenElse
+           | TokenData
+           | TokenBar
            deriving (Eq, Show)
 
 scanTokens = alexScanTokens

@@ -38,9 +38,13 @@ import Terms
       then            { TokenThen }
       else            { TokenElse }
 
+      -- data types --
+      Data            { TokenData }
+      '|'             { TokenBar }
 
 %right '='
 
+%left '|'
 %left '+' '-'
 %left '*' '/'
 
@@ -60,8 +64,14 @@ Term  : var                         { Var $1 }
       | true                        { BoolConst True }
       | false                       { BoolConst False }
       | Term '==' Term              { Equals $1 $3 }
-      | if Term then Term else Term { If $2 $4 $6}
+      | if Term then Term else Term { If $2 $4 $6 }
+      | Data var '=' cList          { Data $2 $4 }
 
+cList : pList                       { [Constr $1] }
+      | pList '|' cList             { (Constr $1) : $3}
+
+pList : var                         { [$1] }
+      | var pList                   { $1 : $2 }
 
 {
 parseError :: [Token] -> a

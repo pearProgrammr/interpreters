@@ -11,7 +11,12 @@ data Term = Var Name
           | Equals Term Term
           | If Term Term Term
           | Assign String Term
+          | Data Name [Constr]
           deriving (Show, Eq)
+
+data Constr = Constr [Name]
+          deriving (Show, Eq)
+
 
 data Op = Add | Sub | Mul | Div
         deriving (Show, Eq)
