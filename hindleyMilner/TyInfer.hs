@@ -14,6 +14,9 @@ unify t1 t2 = TyInf (\c s n -> case unite (apply s t1) (apply s t2) of
 newVar :: TyInf Type
 newVar = TyInf (\c s n -> Answer (TVar (TyVar (enumId n)), c, s, n+1))
 
+newDat :: CElt -> TyInf Type
+newDat = TyInf (\c s n -> Answer (TVar (TyVar (enumId n)), 
+
 -- There has to be a better way to do this... it all ends up looking similar
 enum :: Int -> TyInf Type
 enum idx = newVar
@@ -63,8 +66,14 @@ infer tyEnv (Let v x e)
     t2 <- infer (extendTyEnv tyEnv (v, gen tyEnv t1)) e -- generalize the type of x
     return t2
 
---infer tyEnv (Data Name [Constr])
---  = undefined
+-- create a type called dat and store this in the CEnv
+-- the type of this will be the type that we associate with dat in CEnv
+-- for now, I will associate this with a type variable...
+infer tyEnv (Data datName [cs])
+  = do
+    v <- newVar
+    return v
+
 
 -- Integer operations
 

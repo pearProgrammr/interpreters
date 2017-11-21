@@ -66,15 +66,19 @@ unite (TFun t1 t2) (TFun t1' t2')
     s1 <- unite t1 t1'
     s2 <- unite (apply s1 t2) (apply s1 t2')
     return (s2 @@ s1)
+unite (TCon t1) (TCon t2) = if t1 == t2
+                              then return nullSubst
+                              else Err ("Cannot unify "++ show t1 ++ " with " ++ show t2)
 unite t1 t2 = Err ("Cannot unify "++ show t1 ++ " with " ++ show t2)
 
 varBind :: TyVar -> Type -> Res Subst
 varBind v t = if (v `elem` vars t)
                  then Err "Occurs check fails!"
                  else return [(v, t)]
-              where vars (TVar v)   = [v]
+              where vars (TVar v)   = [v] -- TODO: replace this with tv
                     vars TInt       = []
                     vars TBool      = []
                     vars (TFun l r) = vars l ++ vars r
+                    vars (TCon t)   = []
 
 

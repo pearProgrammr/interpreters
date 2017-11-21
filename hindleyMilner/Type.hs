@@ -9,11 +9,15 @@ type Id = String
 data Type = TVar TyVar
           | TInt
           | TBool
+          | TCon TyCon
           | TFun Type Type
           | TGen Int
           deriving (Eq, Show)
 
 data TyVar = TyVar Id
+           deriving (Eq, Show)
+
+data TyCon = TyCon Id
            deriving (Eq, Show)
 
 enumId :: Int -> Id
@@ -101,7 +105,8 @@ instance Types TyEnv where
 
 -- Constructor Environment
 
-type CEnv = [(Name, [Constructor])]
+type CEnv = [CElt] -- Type decribes the datatype itself
+type CElt = (Name, Type, [Constructor])
 type Constructor = (Name, [Type])
 
 
