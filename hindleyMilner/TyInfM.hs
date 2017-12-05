@@ -56,8 +56,8 @@ run f c s n = printres (app f c s n)
 
 --unification algorithm
 unite :: Type -> Type -> Res Subst
-unite TInt TInt = return nullSubst
-unite TBool TBool = return nullSubst
+--unite TInt TInt = return nullSubst
+--unite TBool TBool = return nullSubst
 unite (TVar v) (TVar w) = return [(v, TVar w) | v /= w]
 unite (TVar v) t = varBind v t
 unite t (TVar v) = varBind v t
@@ -76,9 +76,9 @@ varBind v t = if (v `elem` vars t)
                  then Err "Occurs check fails!"
                  else return [(v, t)]
               where vars (TVar v)   = [v] -- TODO: replace this with tv
-                    vars TInt       = []
-                    vars TBool      = []
                     vars (TFun l r) = vars l ++ vars r
                     vars (TCon t)   = []
+--                    vars TInt       = []
+--                    vars TBool      = []
 
 

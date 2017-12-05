@@ -7,8 +7,6 @@ import Data.Char
 type Name = String
 type Id = String
 data Type = TVar TyVar
-          | TInt
-          | TBool
           | TCon TyCon
           | TFun Type Type
           | TGen Int
@@ -112,8 +110,8 @@ type Constructor = (Name, [Type])
 
 -- pretty print
 prettyType :: Type -> String
-prettyType TInt = "Int"
-prettyType TBool = "Bool"
+--prettyType TInt = "Int"
+--prettyType TBool = "Bool"
 prettyType (TFun x y) = "(" ++ prettyType x ++ " -> " ++ prettyType y ++ ")"
 prettyType (TVar (TyVar id)) = id
 prettyType (TGen n) = varNumToType n

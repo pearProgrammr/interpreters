@@ -14,8 +14,6 @@ unify t1 t2 = TyInf (\c s n -> case unite (apply s t1) (apply s t2) of
 newVar :: TyInf Type
 newVar = TyInf (\c s n -> Answer (TVar (TyVar (enumId n)), c, s, n+1))
 
-newDat :: CElt -> TyInf Type
-newDat = TyInf (\c s n -> Answer (TVar (TyVar (enumId n)), 
 
 -- There has to be a better way to do this... it all ends up looking similar
 enum :: Int -> TyInf Type
@@ -74,7 +72,7 @@ infer tyEnv (Data datName [cs])
     v <- newVar
     return v
 
-
+{-
 -- Integer operations
 
 infer tyEnv (IntConst num)
@@ -107,6 +105,7 @@ infer tyEnv (If c e1 e2)
     unify t3 t2
     return t3
 
+-}
 infer tyEnv (Assign v e)
   = infer tyEnv e
 
