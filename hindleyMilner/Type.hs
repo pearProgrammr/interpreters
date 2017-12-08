@@ -15,8 +15,37 @@ data Type = TVar TyVar
 data TyVar = TyVar Id
            deriving (Eq, Show)
 
-data TyCon = TyCon Id
-           deriving (Eq, Show)
+data TyCon = PrimTy Id
+           | DataTy Id [Constr]
+           deriving Eq 
+
+instance Show TyCon where
+   show (PrimTy i)    = "primitive " ++ i
+   show (DataTy i cs) = "data " ++ i ++ " where\n" ++ unlines [ "  " ++ showConstr c | c <- cs ]
+
+nameTyCon              :: TyCon -> Id
+nameTyCon (PrimTy i)    = i
+nameTyCon (DataTy i cs) = i
+
+findTyCon           :: Id -> CEnv -> TyCon
+findTyCon i env      = case [ tc | tc <- env, nameTyCon tc == i ] of
+                         []     -> error ("undefined type constructor " ++ i)
+                         (tc:_) -> tc
+
+
+-- Constructor Functions:
+
+type Constr = (Id, Type)
+
+nameConstr        :: Constr -> Id
+nameConstr (i, ts) = i
+
+findConstr        :: Id -> CEnv -> Constr
+findConstr i cEnv   = head [ c | DataTy i cs <- cEnv, c <- cs, nameConstr c == i ]
+
+showConstr        :: Constr -> String
+showConstr (i, t)  = i ++ " :: " ++ show t
+
 
 enumId :: Int -> Id
 enumId n = "v" ++ show n
@@ -86,7 +115,7 @@ s1 @@ s2 = [(u, apply s1 t) | (u, t) <- s2] ++ s1
 -- Type Environment
 
 data TyEnv = TyEnv [Assump]
-emptyTyEnv::TyEnv
+emptyTyEnv :: TyEnv
 emptyTyEnv = TyEnv []
 
 extendTyEnv :: TyEnv -> Assump -> TyEnv
@@ -100,12 +129,52 @@ instance Types TyEnv where
   tv as = nub (concat (map tv (getSchemes as)))
           where getSchemes (TyEnv as) = map snd as
 
+-- Abstract syntax for "parsed" programs:
 
--- Constructor Environment
+type Prog    = [Defn]
 
-type CEnv = [CElt] -- Type decribes the datatype itself
-type CElt = (Name, Type, [Constructor])
-type Constructor = (Name, [Type])
+data Defn    = Data Id [(Id, [TypeExp])]
+
+data TypeExp = TEFunc TypeExp TypeExp
+             | TECon  Id
+
+-- Constructor Environments: for now, these just hold lists of types that have
+-- either been specified as primitives or defined as an algebraic
+-- datatype.
+
+type CEnv  = [TyCon]
+
+prelude  :: CEnv
+prelude   = [PrimTy "Int"]
+
+printEnv :: CEnv -> IO ()
+printEnv  = mapM_ (putStrLn . show)
+
+
+-- Calculating the type corresponding to a given type expression:
+
+toType                   :: CEnv -> TypeExp -> Type
+toType cEnv (TEFunc dt rt) = TFun (toType cEnv dt) (toType cEnv rt)
+toType cEnv (TECon i)      = TCon (findTyCon i cEnv)
+
+-- Calculating the new environment that is produced by adding a new
+-- group of type definitions to an existing environment:
+elaborate       :: Prog -> CEnv -> CEnv
+elaborate ds cEnv = newenv
+ where 
+       -- An extended environment that adds the types defined in ds:
+       newenv :: CEnv
+       newenv  = [ tc | Data i ces  <- ds,
+                        let tc = DataTy i (map (constr tc) ces) ] ++ cEnv
+
+       -- If a constructor called ci of a type constructor tc has fields
+       -- described by type expressions tes = [te1, ..., ten], and if the
+       -- corresponding types are t1, ..., tn, then the constructor function
+       -- is described by:  ci :: t1 -> ... -> tn -> tc
+       constr             :: TyCon -> (Id, [TypeExp]) -> Constr
+       constr tc (ci, tes) = (ci, foldr TFun (TCon tc) (map (toType newenv) tes))
+
+
 
 
 -- pretty print

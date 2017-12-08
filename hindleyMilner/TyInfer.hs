@@ -67,11 +67,13 @@ infer tyEnv (Let v x e)
 -- create a type called dat and store this in the CEnv
 -- the type of this will be the type that we associate with dat in CEnv
 -- for now, I will associate this with a type variable...
+{-
 infer tyEnv (Data datName [cs])
   = do
     v <- newVar
     return v
 
+-}
 {-
 -- Integer operations
 
